@@ -4,9 +4,9 @@
 	tools:context="io.baron.gameclock.MainActivity">
 
 	<item
-		android:id="@+id/action_new"
-		android:icon="@drawable/ic_action_new"
-		android:title="New Timer"
+		android:id="@+id/action_delete"
+		android:icon="@drawable/ic_action_discard"
+		android:title="Delete timer"
 		android:showAsAction="always" />
 
 </menu>

@@ -1,5 +1,8 @@
 <resources>
 
-    <color name="black_overlay">#66000000</color>
+	<color name="black_overlay">#66000000</color>
+
+	<color name="timer_running">#669900</color>
+	<color name="timer_stopped">#000000</color>
 
 </resources>

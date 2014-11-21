@@ -1,106 +1,49 @@
 package io.baron.gameclock;
 
-import android.app.Activity;
-import android.content.Context;
+import android.app.FragmentTransaction;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.view.*;
-import android.widget.*;
-
-import java.util.*;
 
 
-public class MainActivity extends Activity {
-
-	static class GameTimer {
-		public String id;
-		public String title;
-		public String name;
-		public Date started;
-		public Date stopped;
-	}
-
-	static class GameTimerAdapter extends BaseAdapter {
-		private List<GameTimer> timers;
-		private final Context context;
-
-		GameTimerAdapter(List<GameTimer> timers, Context context) {
-			this.timers = timers;
-			this.context = context;
-		}
-
-		@Override
-		public int getCount() {
-			return timers.size();
-		}
-
-		@Override
-		public GameTimer getItem(int position) {
-			return timers.get(position);
-		}
-
-		@Override
-		public long getItemId(int position) {
-			return position;
-		}
-
-		@Override
-		public View getView(int position, View convertView, ViewGroup parent) {
-			GameTimer timer = getItem(position);
-
-			if (convertView == null) {
-				convertView = LayoutInflater.from(context).inflate(R.layout.timer, parent, false);
-			}
-
-			TextView title = (TextView) convertView.findViewById(R.id.timerTitle);
-			TextView name = (TextView) convertView.findViewById(R.id.timerName);
-			TextView time = (TextView) convertView.findViewById(R.id.timerTime);
-
-			title.setText(timer.title);
-			name.setText(timer.name);
-
-			long diff = timer.stopped.getTime() - timer.started.getTime();
-			time.setText(formatTime(diff));
-		}
-
-		private String formatTime(long diff) {
-			diff /= 1000;
-
-			int seconds = (int) (diff % 60);
-			diff /= 60;
-			int minutes = (int) (diff % 60);
-			diff /= 60;
-			int hours = (int) (diff % 24);
-
-			StringBuilder builder = new StringBuilder();
-
-			if (hours > 0) {
-				builder.append(String.format(Locale.getDefault(), "%2d:", hours));
-			}
-
-			builder.append(String.format(Locale.getDefault(), "%2d:%2d", minutes, seconds));
-
-			return builder.toString();
-		}
-	}
-
+public class MainActivity extends FragmentActivity {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+
+		TimerCollection.instance = new TimerCollection(this);
+
+		getFragmentManager()
+			.beginTransaction()
+			.add(R.id.activity, new GameTimerListFragment())
+			.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+			.addToBackStack(null)
+			.commit();
 	}
 
 	@Override
-	public void onWindowFocusChanged(boolean hasFocus) {
-		super.onWindowFocusChanged(hasFocus);
-		if (hasFocus) {
-			findViewById(R.id.activity).setSystemUiVisibility(
-				View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-					| View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-					| View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-					| View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-					| View.SYSTEM_UI_FLAG_FULLSCREEN
-					| View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.main, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+			case R.id.action_new:
+				getFragmentManager()
+					.beginTransaction()
+					.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+					.addToBackStack(null)
+					.add(R.id.activity, new NewGameTimerFragment())
+					.commit();
+
+				return true;
 		}
+
+		return super.onOptionsItemSelected(item);
 	}
 }

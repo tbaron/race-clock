@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	android:background="@android:color/background_light"
+	android:orientation="vertical"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent">
+
+	<TextView
+		android:text="Create a new timer.\n\nSpecify the team name, and the members of the team below.\n"
+		android:layout_margin="16dp"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content" />
+
+	<EditText
+		android:id="@+id/timerTitle"
+		android:hint="Team"
+		android:layout_margin="4dp"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content" />
+
+	<EditText
+		android:id="@+id/timerName"
+		android:hint="Names"
+		android:layout_margin="4dp"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content" />
+
+	<Button
+		android:id="@+id/button"
+		android:text="Create"
+		android:layout_margin="4dp"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content" />
+
+</LinearLayout>
