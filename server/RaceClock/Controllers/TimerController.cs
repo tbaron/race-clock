@@ -31,8 +31,13 @@ namespace RaceClock.Controllers
         {
             var matchedTimers = Timers.Where(x => x.Id == id).ToArray();
 
-            if (!matchedTimers.Any() && timer != null)
+            if (!matchedTimers.Any())
             {
+                if (timer == null)
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Missing timer body");
+                }
+
                 Timers.Add(timer);
 
                 GetHubContext().Clients.All.timer(timer);
