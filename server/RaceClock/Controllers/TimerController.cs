@@ -35,9 +35,16 @@ namespace RaceClock.Controllers
 
         public void Post(Guid id, [FromBody]RaceTimer timer)
         {
-            foreach (var t in Timers.Where(x => x.Id == id).ToArray())
+            var matchedTimers = Timers.Where(x => x.Id == id).ToArray();
+
+            foreach (var t in matchedTimers)
             {
                 t.ApplyFrom(timer);
+            }
+
+            if (!matchedTimers.Any() && timer != null)
+            {
+                Timers.Add(timer);
             }
 
             GetHubContext().Clients.All.timer(timer);
