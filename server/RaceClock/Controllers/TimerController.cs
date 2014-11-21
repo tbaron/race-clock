@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Web.Http;
 using Microsoft.AspNet.SignalR;
 using RaceClock.Models;
@@ -25,21 +27,27 @@ namespace RaceClock.Controllers
             return Timers;
         }
 
-        public void Post(Guid id, [FromBody]RaceTimer timer)
+        public HttpResponseMessage Post(Guid id, [FromBody]RaceTimer timer)
         {
             var matchedTimers = Timers.Where(x => x.Id == id).ToArray();
+
+            if (!matchedTimers.Any() && timer != null)
+            {
+                Timers.Add(timer);
+
+                GetHubContext().Clients.All.timer(timer);
+
+                return Request.CreateResponse(HttpStatusCode.Created);
+            }
 
             foreach (var t in matchedTimers)
             {
                 t.ApplyFrom(timer);
             }
 
-            if (!matchedTimers.Any() && timer != null)
-            {
-                Timers.Add(timer);
-            }
-
             GetHubContext().Clients.All.timer(timer);
+
+            return Request.CreateResponse(HttpStatusCode.Accepted);
         }
 
         public void Put([FromBody]RaceTimer timer)
