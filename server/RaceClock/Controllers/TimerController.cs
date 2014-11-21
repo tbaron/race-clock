@@ -33,16 +33,8 @@ namespace RaceClock.Controllers
 
             if (!matchedTimers.Any())
             {
-                if (timer == null)
-                {
-                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Missing timer body");
-                }
-
-                Timers.Add(timer);
-
-                GetHubContext().Clients.All.timer(timer);
-
-                return Request.CreateResponse(HttpStatusCode.Created);
+                timer.Id = id;
+                return Put(timer);
             }
 
             foreach (var t in matchedTimers)
@@ -55,11 +47,11 @@ namespace RaceClock.Controllers
             return Request.CreateResponse(HttpStatusCode.Accepted);
         }
 
-        public void Put([FromBody]RaceTimer timer)
+        public HttpResponseMessage Put([FromBody]RaceTimer timer)
         {
             if (timer == null)
             {
-                return;
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Missing timer body. Got: " + Request.Content.ReadAsStringAsync().Result);
             }
 
             if (timer.Id == null || timer.Id == Guid.Empty)
@@ -74,6 +66,8 @@ namespace RaceClock.Controllers
             Timers.Add(timer);
 
             GetHubContext().Clients.All.timer(timer);
+
+            return Request.CreateResponse(HttpStatusCode.Created);
         }
 
         public void Delete(Guid id)

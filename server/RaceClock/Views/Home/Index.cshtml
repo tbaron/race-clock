@@ -10,33 +10,43 @@
     <script src="~/Scripts/jquery-2.1.1.min.js" type="text/javascript"></script>
     <script src="~/Scripts/jquery.signalR-2.1.2.min.js" type="text/javascript"></script>
     <script src="~/signalr/hubs"></script>
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js"></script>
 </head>
 <body>
     <div>
-        <ul id="timerList"></ul>
+        <ul id="timerList" class="list-unstyled"></ul>
     </div>
 
     <script type="text/javascript">
         $(function () {
             var $timerList = $("#timerList");
             var timerHub = $.connection.timerHub;
+            var timeOffset = 0;
 
-            timerHub.timer = function (timer) {
+            $.getJSON("/api/server", function (data) {
+                timeOffset = data.time - new Date().getTime();
+            });
+
+            timerHub.client.timer = function (timer) {
                 var item = $timerList.find("li[data-id='" + timer.id + "']");
 
-                if (item.length) {
-                    item = $("<li>").appendTo($timerList);
+                if (!item.length) {
+
+                    item = $("<li>")
+                        .attr("data-id", timer.id)
+                        .appendTo($timerList);
                 }
 
-                item.html(JSON.stringify(timer));
+                item.html(nano($("#timerTemplate").html(), timer));
 
-                console.log("timer", item);
+                item.find('.liveTime')
+                    .data("start", timer.start || 0)
+                    .data("stop", timer.stop || 0);
             };
 
-            timerHub.deleteTimer = function (id) {
+            timerHub.client.deleteTimer = function (id) {
                 $timerList.find("li[data-id='" + id + "']").remove();
-
-                console.log("deleteTimer", id);
             };
 
             $.connection.hub.start(function () {
@@ -45,16 +55,80 @@
                         var timer = timers[i];
 
                         var item = $("<li>")
-                            .data("id", timer.id)
-                            .text(JSON.stringify(timer));
+                            .attr("data-id", timer.id)
+                            .html(nano($("#timerTemplate").html(), timer))
+                            .appendTo($timerList);
 
-                        console.log("activate", item);
-
-                        $timerList.append(item);
+                        item.find('.liveTime')
+                            .data("start", timer.start || 0)
+                            .data("stop", timer.stop || 0);
                     }
                 });
             });
+
+            function refreshCallback() {
+                $timerList.find(".liveTime").each(function (i, x) {
+                    var $x = $(x);
+                    var start = $x.data('start') || (new Date().getTime() + timeOffset);
+                    var stop = $x.data('stop') || (new Date().getTime() + timeOffset);
+
+                    if (start instanceof Date) {
+                        start = start.getTime();
+                    }
+                    if (stop instanceof Date) {
+                        stop = stop.getTime();
+                    }
+
+                    var diff = new Date(stop) - new Date(start);
+
+                    diff = diff / 10 | 0;
+
+                    var fraction = (diff % 100);
+                    diff = diff / 100 | 0;
+                    var seconds = (diff % 60);
+                    diff = diff / 60 | 0;
+                    var minutes = (diff % 60);
+                    diff = diff / 60 | 0;
+                    var hours = (diff % 24);
+
+                    if (seconds < 10) {
+                        seconds = "0" + seconds;
+                    }
+                    if (minutes < 10) {
+                        minutes = "0" + minutes;
+                    }
+                    if (fraction < 10) {
+                        fraction = "0" + fraction;
+                    }
+
+                    var elapsed = (hours > 0 ? hours + ":" : "") + minutes + ":" + seconds + "." + fraction;
+
+                    $x.text(elapsed);
+                });
+
+                setTimeout(refreshCallback, 89);
+            }
+
+            refreshCallback();
         });
+
+        function nano(template, data) {
+            return template.replace(/\{([\w\.]*)\}/g, function (str, key) {
+                var keys = key.split("."), v = data[keys.shift()];
+                for (var i = 0, l = keys.length; i < l; i++) v = v[keys[i]];
+                return (typeof v !== "undefined" && v !== null) ? v : "";
+            });
+        }
+    </script>
+
+
+    <script type="text/template" id="timerTemplate">
+
+        <div class="well">
+            <h3>{title}<br /><small>{name}</small></h3>
+            <p><span class="glyphicon glyphicon-time"></span> <span class="liveTime">{elapsed}</span></p>
+        </div>
+
     </script>
 </body>
 </html>
