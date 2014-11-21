@@ -11,15 +11,7 @@ namespace RaceClock.Controllers
     {
         static TimerController()
         {
-            Timers = new List<RaceTimer>
-            {
-                new RaceTimer
-                {
-                    Title = "Team A",
-                    Name = "TB",
-                    Id = Guid.NewGuid()
-                }
-            };
+            Timers = new List<RaceTimer>();
         }
 
         public static IList<RaceTimer> Timers
