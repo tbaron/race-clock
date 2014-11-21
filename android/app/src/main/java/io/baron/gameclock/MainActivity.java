@@ -14,6 +14,7 @@ public class MainActivity extends FragmentActivity {
 		setContentView(R.layout.activity_main);
 
 		TimerCollection.instance = new TimerCollection(this);
+		TimerCollection.instance.getTimeOffset();
 
 		getFragmentManager()
 			.beginTransaction()

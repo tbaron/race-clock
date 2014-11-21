@@ -44,10 +44,12 @@ public class GameTimerListFragment extends ListFragment {
 						switch (item.getItemId()) {
 							case R.id.action_delete:
 
-								TimerCollection.instance.timers.remove(position);
 								TimerCollection.instance.postDelete(adapter.getItem(position));
+								TimerCollection.instance.timers.remove(position);
 
 								adapter.notifyDataSetChanged();
+
+								mode.finish();
 
 								return true;
 						}

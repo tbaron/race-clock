@@ -6,10 +6,12 @@ import android.util.Log;
 
 import com.google.gson.*;
 
+import org.apache.commons.io.IOUtils;
+
 import java.io.*;
 import java.lang.reflect.Type;
 import java.net.*;
-import java.util.Date;
+import java.util.*;
 
 public class TimerCollection {
 	public static final String STATE = "timerState";
@@ -18,6 +20,8 @@ public class TimerCollection {
 
 	private final Context context;
 	private final Gson gson;
+
+	private long serverTimeOffset;
 
 	public final GameTimerList timers = new GameTimerList();
 
@@ -40,6 +44,44 @@ public class TimerCollection {
 			.create();
 	}
 
+	public void getTimeOffset() {
+		new AsyncTask<Void, Void, Void>() {
+
+			@Override
+			protected Void doInBackground(Void... params) {
+
+				try {
+					HttpURLConnection connection = (HttpURLConnection) new URL("https://race-clock.azurewebsites.net/api/server").openConnection();
+					connection.setDoOutput(true);
+					connection.setDoInput(false);
+					connection.setRequestMethod("GET");
+					connection.setRequestProperty("User-Agent", "GYUserAgentAndroid");
+					connection.setRequestProperty("Accept", "application/json");
+					connection.setUseCaches(false);
+
+					String json = IOUtils.toString(connection.getInputStream());
+
+					ServerModel model = gson.fromJson(json, ServerModel.class);
+
+					if (model != null) {
+						serverTimeOffset = model.time.getTime() - new Date().getTime();
+					}
+
+					int responseCode = connection.getResponseCode();
+
+					Log.d("TBARON", "SERVER time diff (" + responseCode + "): " + serverTimeOffset);
+
+					connection.disconnect();
+
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
+				return null;
+			}
+		}.execute();
+	}
+
 	public void postUpdate(GameTimer timer) {
 
 		new AsyncTask<GameTimer, Void, Void>() {
@@ -47,29 +89,50 @@ public class TimerCollection {
 			@Override
 			protected Void doInBackground(GameTimer... params) {
 
-				GameTimer timer = params[0];
+				GameTimer localTimer = params[0];
+				GameTimer timer = new GameTimer();
+				timer.id = localTimer.id;
+				timer.name = localTimer.name;
+				timer.title = localTimer.title;
+				timer.start = localTimer.start;
+				timer.stop = localTimer.stop;
+
+				if (timer.start != null) {
+					Calendar skewedTime = Calendar.getInstance();
+					skewedTime.setTimeInMillis(timer.start.getTime() + serverTimeOffset);
+
+					timer.start = skewedTime.getTime();
+				}
+				
+				if (timer.stop != null) {
+					Calendar skewedTime = Calendar.getInstance();
+					skewedTime.setTimeInMillis(timer.stop.getTime() + serverTimeOffset);
+
+					timer.stop = skewedTime.getTime();
+				}
 
 				try {
 					HttpURLConnection connection = (HttpURLConnection) new URL("https://race-clock.azurewebsites.net/api/timer/" + timer.id).openConnection();
-					connection.setDoOutput(true);
+					connection.setDoOutput(false);
 					connection.setDoInput(true);
 					connection.setRequestMethod("POST");
 					connection.setRequestProperty("User-Agent", "GYUserAgentAndroid");
 					connection.setRequestProperty("Content-Type", "application/json");
 					connection.setUseCaches(false);
 
-					DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream());
 					String json = gson.toJson(timer);
+					DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream());
 
-					outputStream.writeBytes(URLEncoder.encode(json, "UTF-8"));
+					outputStream.writeBytes(json);
 
 					outputStream.flush();
 					outputStream.close();
 
-
 					int responseCode = connection.getResponseCode();
 
 					Log.d("TBARON", "Updated (" + responseCode + "): " + json);
+
+					connection.disconnect();
 
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -91,7 +154,7 @@ public class TimerCollection {
 
 				try {
 					HttpURLConnection connection = (HttpURLConnection) new URL("https://race-clock.azurewebsites.net/api/timer/" + timer.id).openConnection();
-					connection.setDoOutput(true);
+					connection.setDoOutput(false);
 					connection.setDoInput(true);
 					connection.setRequestMethod("DELETE");
 					connection.setRequestProperty("User-Agent", "GYUserAgentAndroid");
@@ -100,6 +163,8 @@ public class TimerCollection {
 					int responseCode = connection.getResponseCode();
 
 					Log.d("TBARON", "DELETED (" + responseCode + "): " + timer.id);
+
+					connection.disconnect();
 
 				} catch (IOException e) {
 					e.printStackTrace();
