@@ -1,0 +1,60 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Race Clock</title>
+
+    <script src="~/Scripts/jquery-2.1.1.min.js" type="text/javascript"></script>
+    <script src="~/Scripts/jquery.signalR-2.1.2.min.js" type="text/javascript"></script>
+    <script src="~/signalr/hubs"></script>
+</head>
+<body>
+    <div>
+        <ul id="timerList"></ul>
+    </div>
+
+    <script type="text/javascript">
+        $(function () {
+            var $timerList = $("#timerList");
+            var timerHub = $.connection.timerHub;
+
+            timerHub.timer = function (timer) {
+                var item = $timerList.find("li[data-id='" + timer.id + "']");
+
+                if (item.length) {
+                    item = $("<li>").appendTo($timerList);
+                }
+
+                item.html(JSON.stringify(timer));
+
+                console.log("timer", item);
+            };
+
+            timerHub.deleteTimer = function (id) {
+                $timerList.find("li[data-id='" + id + "']").remove();
+
+                console.log("deleteTimer", id);
+            };
+
+            $.connection.hub.start(function () {
+                timerHub.server.activate().done(function (timers) {
+                    for (var i in timers) {
+                        var timer = timers[i];
+
+                        var item = $("<li>")
+                            .data("id", timer.id)
+                            .text(JSON.stringify(timer));
+
+                        console.log("activate", item);
+
+                        $timerList.append(item);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
